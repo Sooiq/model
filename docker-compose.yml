@@ -1,0 +1,134 @@
+version: "3.8"
+
+services:
+  # PostgreSQL with TimescaleDB for time-series data
+  postgres:
+    image: timescale/timescaledb:latest-pg14
+    container_name: sooiq-postgres
+    environment:
+      POSTGRES_DB: sooiq_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your_password_here
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sooiq-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: sooiq-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sooiq-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # MLflow for experiment tracking
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: sooiq-mlflow
+    ports:
+      - "5000:5000"
+    environment:
+      BACKEND_STORE_URI: postgresql://postgres:your_password_here@postgres:5432/mlflow_db
+      ARTIFACT_ROOT: /mlflow/artifacts
+    volumes:
+      - mlflow_data:/mlflow
+    networks:
+      - sooiq-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://postgres:your_password_here@postgres:5432/mlflow_db
+      --default-artifact-root /mlflow/artifacts
+
+  # SOOIQ API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sooiq-api
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sooiq_db
+      DB_USER: postgres
+      DB_PASSWORD: your_password_here
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+    networks:
+      - sooiq-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Prometheus for monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sooiq-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deployment/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - sooiq-network
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: sooiq-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deployment/monitoring/grafana-dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
+    networks:
+      - sooiq-network
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  redis_data:
+  mlflow_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  sooiq-network:
+    driver: bridge
