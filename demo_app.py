@@ -285,17 +285,47 @@ def main():
             # Sample news
             if result['sample_news']:
                 st.markdown("---")
-                st.subheader("📰 Sample News Analysis")
+                st.subheader("📰 Real-Time News Analysis")
+                st.markdown(f"*Analyzing {result['news_count']} recent articles from NewsAPI*")
+                
                 for i, article in enumerate(result['sample_news'], 1):
                     sentiment_emoji = {
-                        'positive': '😊',
-                        'negative': '😟',
-                        'neutral': '😐'
+                        'positive': '�',
+                        'negative': '�',
+                        'neutral': '�'
                     }
                     emoji = sentiment_emoji.get(article['label'], '📄')
                     
-                    with st.expander(f"{emoji} Article {i}: {article['label'].upper()} ({article['confidence']:.1%} confident)"):
+                    # Color based on sentiment
+                    sentiment_color = {
+                        'positive': '#00cc00',
+                        'negative': '#ff4444',
+                        'neutral': '#ffaa00'
+                    }
+                    color = sentiment_color.get(article['label'], '#666')
+                    
+                    with st.expander(f"{emoji} **{article.get('title', article['text'][:80])}**"):
+                        # Sentiment badge
+                        st.markdown(f"""
+                        <div style="background: {color}; color: white; padding: 5px 10px; 
+                                    border-radius: 5px; display: inline-block; margin-bottom: 10px;">
+                            {article['label'].upper()} - {article['confidence']:.1%} confidence
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Article metadata
+                        if article.get('source'):
+                            st.write(f"**Source:** {article.get('source', 'Unknown')}")
+                        if article.get('published_at'):
+                            st.write(f"**Published:** {article['published_at'][:10]}")
+                        
+                        # Article text/description
                         st.write(article['text'])
+                        
+                        # Link to full article
+                        if article.get('url'):
+                            st.markdown(f"[Read full article →]({article['url']})")
+            
             
             # Timestamp
             st.markdown("---")

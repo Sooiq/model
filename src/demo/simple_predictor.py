@@ -10,6 +10,8 @@ from typing import Dict, List, Optional
 from transformers import pipeline
 from pathlib import Path
 import warnings
+from newsapi import NewsApiClient
+from src.config import settings
 
 warnings.filterwarnings('ignore')
 
@@ -25,7 +27,7 @@ class SimpleStockPredictor:
     """
     
     def __init__(self):
-        """Initialize the predictor with FinBERT model"""
+        """Initialize the predictor with FinBERT model and NewsAPI"""
         model_path = Path(__file__).parent.parent.parent / "models" / "finbert"
         
         print("Loading FinBERT model...")
@@ -34,27 +36,31 @@ class SimpleStockPredictor:
             model=str(model_path),
             tokenizer=str(model_path)
         )
-        print("✓ Model loaded!")
+        print("[OK] Model loaded!")
+        
+        # Initialize NewsAPI client
+        self.news_api = NewsApiClient(api_key=settings.NEWS_API_KEY)
+        print("[OK] NewsAPI connected!")
     
     def get_news_sentiment(self, ticker: str, company_name: str = None) -> Dict:
         """
-        Get news sentiment for a stock
-        
-        Note: For hackathon, using mock news. In production, integrate NewsAPI.
+        Get news sentiment for a stock using REAL news from NewsAPI
         """
-        # Mock news articles for demo (replace with real NewsAPI in production)
-        mock_news = [
-            f"{ticker} reports strong quarterly earnings, beating expectations",
-            f"Analysts upgrade {ticker} stock to 'buy' rating",
-            f"{ticker} announces new product launch, shares rise",
-            f"Market volatility affects {ticker} trading",
-            f"{ticker} faces regulatory scrutiny in new markets"
-        ]
+        # Fetch real news articles
+        news_articles = self._fetch_news(ticker, company_name)
         
         # Analyze sentiment
         sentiments = []
-        for text in mock_news:
+        for article in news_articles:
             try:
+                # Combine title and description for better context
+                text = article.get('title', '')
+                if article.get('description'):
+                    text += ". " + article['description']
+                
+                if not text.strip():
+                    continue
+                
                 result = self.sentiment_analyzer(text[:512])[0]  # FinBERT max length
                 
                 # Convert label to score
@@ -67,12 +73,16 @@ class SimpleStockPredictor:
                 
                 sentiments.append({
                     'text': text,
+                    'title': article.get('title', 'N/A'),
+                    'source': article.get('source', {}).get('name', 'Unknown'),
+                    'url': article.get('url', ''),
+                    'published_at': article.get('publishedAt', ''),
                     'label': result['label'],
                     'score': score,
                     'confidence': result['score']
                 })
             except Exception as e:
-                print(f"Error analyzing: {text[:50]}... - {e}")
+                print(f"Error analyzing article: {e}")
         
         # Calculate aggregate sentiment
         if sentiments:
@@ -93,6 +103,84 @@ class SimpleStockPredictor:
             'total_articles': len(sentiments),
             'articles': sentiments[:3]  # Top 3 for display
         }
+    
+    def _fetch_news(self, ticker: str, company_name: str = None) -> List[Dict]:
+        """
+        Fetch real news articles from NewsAPI
+        
+        Args:
+            ticker: Stock ticker symbol (e.g., 'AAPL')
+            company_name: Optional company name for better search
+        
+        Returns:
+            List of news articles
+        """
+        try:
+            # Map common tickers to company names for better search results
+            ticker_to_company = {
+                'AAPL': 'Apple',
+                'MSFT': 'Microsoft',
+                'GOOGL': 'Google',
+                'GOOG': 'Google',
+                'AMZN': 'Amazon',
+                'TSLA': 'Tesla',
+                'META': 'Meta',
+                'FB': 'Meta',
+                'NVDA': 'NVIDIA',
+                'NFLX': 'Netflix',
+                'AMD': 'AMD',
+                'INTC': 'Intel',
+                'JPM': 'JPMorgan',
+                'BAC': 'Bank of America',
+                'WMT': 'Walmart',
+                'DIS': 'Disney',
+                'PYPL': 'PayPal',
+                'V': 'Visa',
+                'MA': 'Mastercard',
+                'BABA': 'Alibaba',
+            }
+            
+            search_query = company_name or ticker_to_company.get(ticker, ticker)
+            
+            # Get news from last 7 days
+            from_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+            
+            # Fetch news articles
+            response = self.news_api.get_everything(
+                q=search_query,
+                from_param=from_date,
+                language='en',
+                sort_by='relevancy',
+                page_size=20  # Get top 20 articles
+            )
+            
+            articles = response.get('articles', [])
+            
+            # If no articles found, try with ticker symbol
+            if not articles and search_query != ticker:
+                response = self.news_api.get_everything(
+                    q=ticker,
+                    from_param=from_date,
+                    language='en',
+                    sort_by='relevancy',
+                    page_size=20
+                )
+                articles = response.get('articles', [])
+            
+            return articles[:15]  # Limit to 15 most relevant
+            
+        except Exception as e:
+            print(f"Error fetching news for {ticker}: {e}")
+            # Return mock news as fallback
+            return [
+                {
+                    'title': f'{ticker} - News temporarily unavailable',
+                    'description': 'Using cached analysis for demonstration',
+                    'source': {'name': 'Demo'},
+                    'url': '',
+                    'publishedAt': datetime.now().isoformat()
+                }
+            ]
     
     def get_price_data(self, ticker: str, days: int = 30) -> Dict:
         """Get historical price data and calculate momentum indicators"""
