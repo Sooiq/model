@@ -1,0 +1,69 @@
+{
+  "model_name": "LSTM Stock Predictor",
+  "version": "1.0",
+  "created_date": "2025-11-09 02:36:03",
+  "input_features": [
+    "MA_20",
+    "MA_50",
+    "EMA_20",
+    "RSI_14",
+    "MACD",
+    "BB_Width",
+    "PSAR",
+    "ATR",
+    "OBV",
+    "MFI",
+    "Close_Open_Ratio",
+    "Candle_Body_Size",
+    "Upper_Shadow",
+    "Lower_Shadow",
+    "Volume",
+    "technology_sentiment",
+    "technology_confidence",
+    "financial_sentiment",
+    "financial_confidence",
+    "consumer_cyclical_sentiment",
+    "consumer_cyclical_confidence",
+    "healthcare_sentiment",
+    "healthcare_confidence",
+    "industrials_sentiment",
+    "industrials_confidence"
+  ],
+  "sequence_length": 5,
+  "input_size": 25,
+  "architecture": {
+    "lstm1_hidden": 128,
+    "lstm2_hidden": 64,
+    "fc_layers": [
+      128,
+      64,
+      32,
+      1
+    ],
+    "dropout": 0.3,
+    "total_parameters": 147713
+  },
+  "training": {
+    "train_size": 11769,
+    "val_size": 2514,
+    "test_size": 2521,
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "loss_function": "MSE"
+  },
+  "performance": {
+    "test_mse": 0.001291898312047124,
+    "test_rmse": 0.035942986966126286,
+    "test_mae": 0.025966079905629158,
+    "test_r2": 0.33389532566070557,
+    "within_1pct": 25.62475208250694,
+    "within_2pct": 48.671162237207454,
+    "within_5pct": 89.28996429988099
+  },
+  "data_info": {
+    "date_range": "2018-01-01 to 2023-12-25",
+    "total_samples": 16809,
+    "stocks": 57,
+    "sectors": 5
+  }
+}
