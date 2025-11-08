@@ -89,3 +89,5 @@ htmlcov/
 tmp/
 temp/
 *.tmp
+
+.venv310/
