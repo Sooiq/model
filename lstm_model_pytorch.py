@@ -61,7 +61,7 @@ print(f"X_scaled shape: {X_scaled.shape}")
 print(f"y shape: {y.shape}")
 print(f"y statistics: min={y.min():.4f}, max={y.max():.4f}, mean={y.mean():.4f}, std={y.std():.4f}")
 
-sequence_length = 12  # Use 12 weeks of history to predict next week
+sequence_length = 5  # Use 5 weeks of history to predict next week
 X_seq, y_seq = [], []
 
 print(f"\nCreating sequences with length {sequence_length}...")
