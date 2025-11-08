@@ -14,7 +14,7 @@ stocks = ['CRM','UBER','INTU','NOW','ADBE','ADP','SNOW','CDNS','MSTR','DDOG','AD
 print(f"Total stocks to process: {len(stocks)}")
 def is_delisted(stock, try_download=True):
     if try_download:
-        data = yf.download(stock, start="2018-01-01", end='2023-12-31')
+        data = yf.download(stock, start="2013-01-01", end='2022-12-31', interval='1wk', progress=False)
         if data is None or data.empty:
             return True
     info = yf.Ticker(stock).info
@@ -82,7 +82,7 @@ def fetch_stock_data(stocks):
     
     combined_data = pd.concat(all_stock_data)
     # Calculate backward-looking weekly return: (current week high - last week high) / last week high
-    combined_data['Target'] = combined_data.groupby('Ticker')['High'].transform(lambda x: ((x - x.shift(1)) / x.shift(1)))
+    combined_data['Weekly_Return'] = combined_data.groupby('Ticker')['High'].transform(lambda x: ((x - x.shift(1)) / x.shift(1)))
     
     # Save to CSV instead of Excel
     csv_filename = 'technical_indicators_data.csv'
