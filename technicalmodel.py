@@ -6,17 +6,31 @@ from ta.momentum import RSIIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import OnBalanceVolumeIndicator, MFIIndicator
 
-stocks = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'AVGO','TSLA', 'META', 'BRK-B', 'NFLX','META', 
-            'PLTR','COST','ASML','AMD','CSCO','MU','AZN','TMUS','APP','ISRG','SHOP','LIN','PEP',
-            'PDD','AMAT','QCOM','INTC','INTU','AMGN','ADBE','TXN','BKNG','ZM','SNOW','NOW','ADSK','LRCX',
-            'MRVL','WDAY','CTSH','EBAY','SNDK','UAL','EXE','KDP','CDNS','MCHP','VRSK',
-            'DLTR','ALGN','CPRT','FAST','IDXX','XEL','SWKS', 'UBER', 'LYFT', 'XOM', 'CVX'
-        ]
+stocks = ['CRM','UBER','INTU','NOW','ADBE','ADP','SNOW','CDNS','MSTR','DDOG','ADSK','WDAY','ROP','GRAB','FIG',
+          'JPM','BAC','WFC','C','RY','TD','BK','NTB',
+          'MCD','SBUX','YUM','CMG','DRI','YUMC','DPZ','TXRH','BROS','WING','SHAK', 
+          'ZTS','UTHR','NBIX','VTRS','ELAN','HIMS','RGC','ALKS','INDV','AMRX','LNTH'
+          'TT','JCI','CARR','LII','CSL','MAS','BLDR','WMS','SPXC','AAON','OC','AWI','FBIN']
+print(len(stocks))
+def is_delisted(stock, try_download=True):
+    if try_download:
+        data = yf.download(stock, start="2018-01-01", end='2023-12-31')
+        if data is None or data.empty:
+            return True
+    info = yf.Ticker(stock).info
+    if 'delisted' in info and info['delisted']:
+        return True
+    return False
+
+for stock in stocks:
+    if is_delisted(stock):
+        stocks.remove(stock)
+
 def fetch_stock_data(stocks):
-    today = datetime.date.today()
     all_stock_data = []
     for stock in stocks: #Download and calculate features for each stock
-        data = yf.download(stock, start="2010-01-01", end=today)
+        data = yf.download(stock, start="2018-01-01", end='2023-12-31', interval='1wk')
+
         data.columns = data.columns.get_level_values(0)
         data['Ticker'] = stock
         data['Sector'] = yf.Sector(yf.Ticker(stock).info.get('sectorKey'))
