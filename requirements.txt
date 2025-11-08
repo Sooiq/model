@@ -12,12 +12,14 @@ transformers>=4.30.0
 
 # Data Sources
 yfinance>=0.2.0              # Stock price data
+ta>=0.6.0                    # Technical analysis indicators
 newsapi-python>=0.2.7        # Real-time news
 requests>=2.31.0
 
 # Demo UI
 streamlit>=1.28.0            # Quick web interface
 plotly>=5.17.0               # Interactive charts
+openpyxl>=3.1.2                # Excel export
 
 # Utilities
 python-dotenv>=1.0.0         # Environment variables
