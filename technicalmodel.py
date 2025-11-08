@@ -7,10 +7,10 @@ from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import OnBalanceVolumeIndicator, MFIIndicator
 
 stocks = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'AVGO','TSLA', 'META', 'BRK-B', 'NFLX','META', 
-            'PLTR','COST','ASML','AMD','CSCO','MU','AZN','TMUS','APP','LRXC','ISRG','SHOP','LIN','PEP',
+            'PLTR','COST','ASML','AMD','CSCO','MU','AZN','TMUS','APP','ISRG','SHOP','LIN','PEP',
             'PDD','AMAT','QCOM','INTC','INTU','AMGN','ADBE','TXN','BKNG','ZM','SNOW','NOW','ADSK','LRCX',
-            'MRVL','WDAY','XLNX','CTSH','EBAY','SNDK','UAL','EXE','FISV','KDP','ANSS','CDNS','MCHP','VRSK',
-            'DLTR','ALGN','CPRT','FAST','IDXX','XEL','SWKS',
+            'MRVL','WDAY','CTSH','EBAY','SNDK','UAL','EXE','KDP','CDNS','MCHP','VRSK',
+            'DLTR','ALGN','CPRT','FAST','IDXX','XEL','SWKS', 'UBER', 'LYFT', 'XOM', 'CVX'
         ]
 def fetch_stock_data(stocks):
     today = datetime.date.today()
@@ -19,8 +19,15 @@ def fetch_stock_data(stocks):
         data = yf.download(stock, start="2010-01-01", end=today)
         data.columns = data.columns.get_level_values(0)
         data['Ticker'] = stock
+        data['Sector'] = yf.Sector(yf.Ticker(stock).info.get('sectorKey'))
+        data['Industry'] = yf.Ticker(yf.Ticker(stock).info.get('industryKey'))
+        data['Market_Weight_Sector'] = yf.Ticker(stock).info.get('marketWeightInSector', None)
+        data['Market_Weight_Industry'] = yf.Ticker(stock).info.get('marketWeightInIndustry', None)
         data['Date'] = data.index
         data['Volume'] = data.Volume.shift(1).values/100_000_000 # Shift volume by 1 day and scale down
+        if data is None or data.empty:
+            continue
+         # Calculate technical indicators
         data['MA_20'] = SMAIndicator(close=data['Close'], window=20).sma_indicator()
         data['MA_50'] = SMAIndicator(close=data['Close'], window=50).sma_indicator()
         data['EMA_20'] = EMAIndicator(close=data['Close'], window=20).ema_indicator()
@@ -28,7 +35,9 @@ def fetch_stock_data(stocks):
         data['MACD'] = MACD(close=data['Close']).macd()
         data['BB_Width'] = BollingerBands(close=data['Close'], window=20).bollinger_wband()
         data['PSAR'] = PSARIndicator(high=data['High'], low=data['Low'], close=data['Close']).psar()
-        data['ATR'] = AverageTrueRange(high=data['High'], low=data['Low'], close=data['Close'], window=14).average_true_range()
+        if data is None or data.empty:
+            continue
+        else: data['ATR'] = AverageTrueRange(high=data['High'], low=data['Low'], close=data['Close']).average_true_range()
         data['OBV'] = OnBalanceVolumeIndicator(close=data['Close'], volume=data['Volume']).on_balance_volume()
         data['MFI'] = MFIIndicator(high=data['High'], low=data['Low'], close=data['Close'], volume=data['Volume'], window=14).money_flow_index()
         data['Close_Open_Ratio'] = data['Close'] / data['Open']
@@ -39,5 +48,9 @@ def fetch_stock_data(stocks):
         all_stock_data.append(data)
 
     combined_data = pd.concat(all_stock_data)
+    combined_data['Target'] = combined_data.groupby('Ticker')['Close'].transform(lambda x: ((x-x.shift(7))/x.shift(7)))
+    combined_data.to_excel('technical_indicators_data.xlsx', index=True)
+    return combined_data
 
-
+if __name__ == "__main__":
+    fetch_stock_data(stocks)
