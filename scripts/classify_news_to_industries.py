@@ -250,7 +250,7 @@ class NewsClassifier:
         return classified
 
 
-def load_news_dataset(file_path: str, start_date: str = '2018-01-01', end_date: str = '2022-12-31') -> List[Dict]:
+def load_news_dataset(file_path: str, start_date: str = '2013-01-01', end_date: str = '2022-12-31') -> List[Dict]:
     """
     Load news dataset and filter by date range
     

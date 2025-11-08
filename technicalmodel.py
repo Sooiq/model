@@ -36,7 +36,7 @@ def fetch_stock_data(stocks):
     for idx, stock in enumerate(stocks, 1):
         print(f"Processing [{idx}/{total}] {stock}...", end=' ')
         try:
-            data = yf.download(stock, start="2018-01-01", end='2023-12-31', interval='1wk', progress=False)
+            data = yf.download(stock, start="2013-01-01", end='2022-12-31', interval='1wk', progress=False)
 
             if data is None or data.empty:
                 print("❌ No data")
