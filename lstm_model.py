@@ -15,7 +15,17 @@ import tensorflow.keras.backend as K
 #Import technical indicators data
 data_technical = pd.read_csv('technical_indicators.csv')
 data_news = pd.read_csv('news_sentiment.csv')
-data = pd.merge(data_technical, data_news, on=['Date', 'Industry'], how='inner')
+data = data_technical.merge(data_news, on=['Date'], how='left')
+data = data.fillna(0)
+
+sentiment_cols = [col for col in data.columns if col.endswith('_sentiment')]
+confidence_cols = [col for col in data.columns if col.endswith('_confidence')]
+
+for col in sentiment_cols + confidence_cols:
+    sector = col.replace('_sentiment', '').replace('_confidence', '')
+    data[col] = data[col].where(data["Sector"].str.lower() == sector.lower(), 0)
+
+data.to_excel('merged_data.xlsx', index=True)
 
 #Encode tickers, sectors, industries
 def encode_categorical_features(data):
