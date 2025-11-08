@@ -252,7 +252,12 @@ def process_weekly_sentiment(processor: SentimentFeatureProcessor,
     
     rows = []
     for week in sorted(weekly_sentiments.keys()):
-        row = {'week': week}
+        # Convert week format (YYYY-WXX) to date (YYYY-MM-DD)
+        # Taking the Monday of each week
+        year, week_num = week.split('-W')
+        date = datetime.strptime(f'{year}-W{int(week_num):02d}-1', '%Y-W%W-%w').strftime('%Y-%m-%d')
+        
+        row = {'Date': date}
         
         for industry in INDUSTRIES:
             sentiment_data = weekly_sentiments[week][industry]
@@ -303,7 +308,7 @@ def save_outputs(df: pd.DataFrame, weekly_sentiments: Dict, output_dir: str = 'd
     summary = {
         'total_weeks': len(df),
         'industries': INDUSTRIES,
-        'date_range': f"{df['week'].iloc[0]} to {df['week'].iloc[-1]}",
+        'date_range': f"{df['Date'].iloc[0]} to {df['Date'].iloc[-1]}",
         'sentiment_statistics': {}
     }
     
@@ -331,7 +336,7 @@ def display_sample_data(df: pd.DataFrame):
     print(f"{'='*80}\n")
     
     # Select sentiment columns only for display
-    display_cols = ['week'] + [f'{ind}_sentiment' for ind in INDUSTRIES]
+    display_cols = ['Date'] + [f'{ind}_sentiment' for ind in INDUSTRIES]
     sample_df = df[display_cols].head(10)
     
     print(sample_df.to_string(index=False))

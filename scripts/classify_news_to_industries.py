@@ -440,7 +440,7 @@ def main():
     
     # Configuration
     dataset_path = Path(__file__).parent.parent / 'datasets' / 'News_Category_Dataset_v3.json'
-    start_date = '2018-01-01'
+    start_date = '2013-01-01'
     end_date = '2022-12-31'
     articles_per_week = 20
     classification_threshold = 0.3
