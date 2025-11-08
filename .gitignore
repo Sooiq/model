@@ -43,7 +43,7 @@ wheels/
 data/raw/
 data/processed/
 data/qlib_data/
-*.csv
+# *.csv
 *.parquet
 *.h5
 *.hdf5
