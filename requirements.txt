@@ -9,7 +9,7 @@ numpy>=1.23.0,<2.0.0
 # Machine Learning - FinBERT Sentiment Analysis
 torch>=2.0.0
 transformers>=4.30.0
-tensorflow>=2.16.0
+keras>=3.10.0
 
 # Data Sources
 yfinance>=0.2.0              # Stock price data
