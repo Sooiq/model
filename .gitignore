@@ -50,11 +50,11 @@ data/qlib_data/
 
 # Models (don't commit large model files)
 models/
-*.pkl
+# *.pkl
 *.joblib
-*.h5
-*.pt
-*.pth
+# *.h5
+# *.pt
+# *.pth
 *.ckpt
 
 # Logs
