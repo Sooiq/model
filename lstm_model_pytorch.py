@@ -10,6 +10,7 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
 from tqdm import tqdm
+import pickle
 
 # Check GPU availability
 print("=" * 60)
@@ -57,6 +58,11 @@ print("\nScaling features...")
 scaler = RobustScaler()
 X_scaled = scaler.fit_transform(data[features])
 y = data['Weekly_Return'].values  # Predict continuous weekly return
+
+# Save scaler for later use in model_usage_example.py
+with open('scaler.pkl', 'wb') as f:
+    pickle.dump(scaler, f)
+print("Scaler saved to 'scaler.pkl'")
 
 print(f"X_scaled shape: {X_scaled.shape}")
 print(f"y shape: {y.shape}")
@@ -332,4 +338,9 @@ print("\nModel saved to 'lstm_stock_predictor_pytorch.pth'")
 
 print("\n" + "=" * 60)
 print("TRAINING COMPLETE!")
+print("=" * 60)
+print("\nExported Files for model_usage_example.py:")
+print("   1. lstm_stock_predictor_pytorch.pth  - Trained model weights")
+print("   2. scaler.pkl                        - Feature scaler")
+print("\n[OK] Ready for predictions! Run: python model_usage_example.py")
 print("=" * 60)
