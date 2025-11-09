@@ -97,7 +97,7 @@ X_scaled = scaler.fit_transform(data[features])
 y = data['Weekly_Return'].values
 
 # Create sequences
-sequence_length = 5  # Use 5 weeks of history to predict next week (UPDATED TO MATCH TRAINING)
+sequence_length = 4  # Use 5 weeks of history to predict next week (UPDATED TO MATCH TRAINING)
 X_seq, y_seq = [], []
 
 for i in range(sequence_length, len(X_scaled)):
