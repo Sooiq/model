@@ -291,6 +291,12 @@ MIT License```
 - [FinBERT Model](https://huggingface.co/ProsusAI/finbert)
 - [NewsAPI Docs](https://newsapi.org/docs)
 
+## 🔗 Attribution
+This project uses the **News Category Dataset** by Rishabh Misra (2022):
+
+Misra, R. (2022). *News Category Dataset*. arXiv:2209.11429.  
+https://arxiv.org/abs/2209.11429  
+
 ## 📝 License
 
 MIT License
