@@ -18,9 +18,9 @@ import pickle
 import json
 from datetime import datetime
 
-# Import the model architecture
+# Import the model architecture (UPDATED TO MATCH TUNED MODEL)
 class LSTMRegressor(nn.Module):
-    def __init__(self, input_size, hidden_size1=128, hidden_size2=64, dropout=0.3):
+    def __init__(self, input_size, hidden_size1=128, hidden_size2=64, dropout=0.2):
         super(LSTMRegressor, self).__init__()
         
         self.lstm1 = nn.LSTM(input_size, hidden_size1, batch_first=True)
@@ -29,19 +29,15 @@ class LSTMRegressor(nn.Module):
         self.lstm2 = nn.LSTM(hidden_size1, hidden_size2, batch_first=True)
         self.dropout2 = nn.Dropout(dropout)
         
-        self.fc1 = nn.Linear(hidden_size2, 128)
+        self.fc1 = nn.Linear(hidden_size2, 64)
         self.relu1 = nn.ReLU()
         self.dropout3 = nn.Dropout(dropout)
         
-        self.fc2 = nn.Linear(128, 64)
+        self.fc2 = nn.Linear(64, 32)
         self.relu2 = nn.ReLU()
         self.dropout4 = nn.Dropout(dropout)
         
-        self.fc3 = nn.Linear(64, 32)
-        self.relu3 = nn.ReLU()
-        self.dropout5 = nn.Dropout(0.2)
-        
-        self.fc4 = nn.Linear(32, 1)
+        self.fc3 = nn.Linear(32, 1)
     
     def forward(self, x):
         # LSTM layers
@@ -64,10 +60,6 @@ class LSTMRegressor(nn.Module):
         out = self.dropout4(out)
         
         out = self.fc3(out)
-        out = self.relu3(out)
-        out = self.dropout5(out)
-        
-        out = self.fc4(out)
         
         return out
 
@@ -93,7 +85,8 @@ for col in sentiment_cols + confidence_cols:
 
 features = ['MA_20', 'MA_50', 'EMA_20', 'RSI_14', 'MACD', 'BB_Width', 'PSAR', 'ATR',
             'OBV', 'MFI', 'Close_Open_Ratio', 'Candle_Body_Size', 'Upper_Shadow', 'Lower_Shadow',
-            'Volume', 'technology_sentiment', 'technology_confidence',
+            'Volume', 'CDL_DOJI', 'CDL_HAMMER', 'CDL_SHOOTING_STAR', 'CDL_ENGULFING', 'CDL_3WHITE_SOLDIERS', 'CDL_3BLACK_CROWS',
+            'technology_sentiment', 'technology_confidence',
             'financial_sentiment', 'financial_confidence', 'consumer_cyclical_sentiment', 
             'consumer_cyclical_confidence', 'healthcare_sentiment', 'healthcare_confidence', 
             'industrials_sentiment', 'industrials_confidence']
@@ -104,7 +97,7 @@ X_scaled = scaler.fit_transform(data[features])
 y = data['Weekly_Return'].values
 
 # Create sequences
-sequence_length = 5  # Use 5 weeks of history to predict next week
+sequence_length = 5  # Use 5 weeks of history to predict next week (UPDATED TO MATCH TRAINING)
 X_seq, y_seq = [], []
 
 for i in range(sequence_length, len(X_scaled)):
@@ -118,9 +111,9 @@ y_seq = np.array(y_seq, dtype=np.float32).reshape(-1, 1)
 X_temp, X_test, y_temp, y_test = train_test_split(X_seq, y_seq, test_size=0.15, shuffle=False)
 X_train, X_val, y_train, y_val = train_test_split(X_temp, y_temp, test_size=0.176, shuffle=False)
 
-print(f"   ✓ Train set: {X_train.shape}")
-print(f"   ✓ Val set: {X_val.shape}")
-print(f"   ✓ Test set: {X_test.shape}")
+print(f"Train set: {X_train.shape}")
+print(f"Val set: {X_val.shape}")
+print(f"Test set: {X_test.shape}")
 
 # Load trained model
 print("\n2. Loading trained model...")
@@ -129,7 +122,7 @@ input_size = X_train.shape[2]
 model = LSTMRegressor(input_size).to(device)
 model.load_state_dict(torch.load('lstm_stock_predictor_pytorch.pth'))
 model.eval()
-print(f"   ✓ Model loaded on {device}")
+print(f"Model loaded on {device}")
 
 # Convert test data to tensors
 X_test_tensor = torch.FloatTensor(X_test).to(device)
@@ -274,10 +267,11 @@ model_metadata = {
     'sequence_length': sequence_length,
     'input_size': input_size,
     'architecture': {
+        'model_type': 'LSTMRegressor (Tuned)',
         'lstm1_hidden': 128,
         'lstm2_hidden': 64,
-        'fc_layers': [128, 64, 32, 1],
-        'dropout': 0.3,
+        'fc_layers': [64, 32, 1],
+        'dropout': 0.2,
         'total_parameters': sum(p.numel() for p in model.parameters())
     },
     'training': {
@@ -285,7 +279,8 @@ model_metadata = {
         'val_size': len(X_val),
         'test_size': len(X_test),
         'optimizer': 'Adam',
-        'learning_rate': 0.001,
+        'learning_rate': 0.0005,
+        'batch_size': 64,
         'loss_function': 'MSE'
     },
     'performance': {
@@ -339,14 +334,14 @@ features = ['MA_20', 'MA_50', 'EMA_20', 'RSI_14', 'MACD', 'BB_Width', 'PSAR', 'A
             'consumer_cyclical_confidence', 'healthcare_sentiment', 'healthcare_confidence', 
             'industrials_sentiment', 'industrials_confidence']
 
-def predict_weekly_return(recent_12_weeks_data):
+def predict_weekly_return(recent_5_weeks_data):
     """
-    Predict the next week's return based on the last 12 weeks of data.
-    
+    Predict the next week's return based on the last 5 weeks of data.
+
     Parameters:
     -----------
-    recent_12_weeks_data : pd.DataFrame
-        DataFrame with 12 rows (weeks) and 25 feature columns
+    recent_5_weeks_data : pd.DataFrame
+        DataFrame with 5 rows (weeks) and 25 feature columns
         Must contain all features in the correct order
     
     Returns:
@@ -354,16 +349,16 @@ def predict_weekly_return(recent_12_weeks_data):
     float : Predicted weekly return (e.g., 0.05 means +5%)
     """
     # Validate input
-    if len(recent_12_weeks_data) != 12:
-        raise ValueError(f"Expected 12 weeks of data, got {len(recent_12_weeks_data)}")
-    
-    if list(recent_12_weeks_data.columns) != features:
+    if len(recent_5_weeks_data) != 5:
+        raise ValueError(f"Expected 5 weeks of data, got {len(recent_5_weeks_data)}")
+
+    if list(recent_5_weeks_data.columns) != features:
         raise ValueError("Feature names or order doesn't match training data")
     
     # Scale the data
-    scaled_data = scaler.transform(recent_12_weeks_data[features])
-    
-    # Reshape for LSTM: (1, 12, 25)
+    scaled_data = scaler.transform(recent_5_weeks_data[features])
+
+    # Reshape for LSTM: (1, 5, 25)
     input_tensor = torch.FloatTensor(scaled_data).unsqueeze(0).to(device)
     
     # Make prediction
@@ -374,8 +369,8 @@ def predict_weekly_return(recent_12_weeks_data):
 
 # Example usage:
 # --------------
-# Assuming you have new data with the last 12 weeks of features
-# new_data = pd.DataFrame(...)  # 12 rows × 25 columns
+# Assuming you have new data with the last 5 weeks of features
+# new_data = pd.DataFrame(...)  # 5 rows × 25 columns
 # predicted_return = predict_weekly_return(new_data)
 # print(f"Predicted weekly return: {predicted_return:.4f} ({predicted_return*100:.2f}%)")
 '''

@@ -1,13 +1,15 @@
 import yfinance as yf
 import datetime
 import pandas as pd
+import talib as ta
 from ta.trend import SMAIndicator, EMAIndicator, MACD, PSARIndicator
 from ta.momentum import RSIIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.volume import OnBalanceVolumeIndicator, MFIIndicator
 
-stocks = ['CRM','UBER','INTU','NOW','ADBE','ADP','SNOW','CDNS','MSTR','DDOG','ADSK','WDAY','ROP','GRAB','FIG',
-          'JPM','BAC','WFC','C','RY','TD','BK','NTB',
+stocks = ['CRM','UBER','INTU','NOW','ADBE','ADP','SNOW','CDNS','MSTR','DDOG','ADSK','WDAY','ROP','GRAB','FIG', 'ZM',
+          'PTC', 'PAYX', 'DUOL', 'PAYC', 'LYFT',
+          'JPM','BAC','WFC','C','RY','TD','BK','NTB', 
           'MCD','SBUX','YUM','CMG','DRI','YUMC','DPZ','TXRH','BROS','WING','SHAK', 
           'ZTS','UTHR','NBIX','VTRS','ELAN','HIMS','RGC','ALKS','INDV','AMRX','LNTH',
           'TT','JCI','CARR','LII','CSL','MAS','BLDR','WMS','SPXC','AAON','OC','AWI','FBIN']
@@ -68,6 +70,12 @@ def fetch_stock_data(stocks):
             data['Candle_Body_Size'] = abs(data['Close'] - data['Open']) / data['Open']
             data['Upper_Shadow'] = data['High'] - data[['Close', 'Open']].max(axis=1)
             data['Lower_Shadow'] = data[['Close', 'Open']].min(axis=1) - data['Low']
+            data['CDL_DOJI'] = ta.CDLDOJI(data['Open'], data['High'], data['Low'], data['Close'])
+            data['CDL_HAMMER'] = ta.CDLHAMMER(data['Open'], data['High'], data['Low'], data['Close'])
+            data['CDL_SHOOTING_STAR'] = ta.CDLSHOOTINGSTAR(data['Open'], data['High'], data['Low'], data['Close'])
+            data['CDL_ENGULFING'] = ta.CDLENGULFING(data['Open'], data['High'], data['Low'], data['Close'])
+            data['CDL_3WHITE_SOLDIERS'] = ta.CDL3WHITESOLDIERS(data['Open'], data['High'], data['Low'], data['Close'])
+            data['CDL_3BLACK_CROWS'] = ta.CDL3BLACKCROWS(data['Open'], data['High'], data['Low'], data['Close'])
 
             all_stock_data.append(data)
             print(f"✅ {len(data)} weeks")
@@ -85,7 +93,7 @@ def fetch_stock_data(stocks):
     combined_data['Weekly_Return'] = combined_data.groupby('Ticker')['High'].transform(lambda x: ((x - x.shift(1)) / x.shift(1)))
     
     # Save to CSV instead of Excel
-    csv_filename = 'technical_indicators_data.csv'
+    csv_filename = 'technical_indicators.csv'
     combined_data.to_csv(csv_filename, index=True)
     
     print(f"✅ Saved to: {csv_filename}")
