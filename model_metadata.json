@@ -1,7 +1,7 @@
 {
   "model_name": "LSTM Stock Predictor",
   "version": "1.0",
-  "created_date": "2025-11-09 02:36:03",
+  "created_date": "2025-11-09 10:11:17",
   "input_features": [
     "MA_20",
     "MA_50",
@@ -18,6 +18,12 @@
     "Upper_Shadow",
     "Lower_Shadow",
     "Volume",
+    "CDL_DOJI",
+    "CDL_HAMMER",
+    "CDL_SHOOTING_STAR",
+    "CDL_ENGULFING",
+    "CDL_3WHITE_SOLDIERS",
+    "CDL_3BLACK_CROWS",
     "technology_sentiment",
     "technology_confidence",
     "financial_sentiment",
@@ -29,41 +35,42 @@
     "industrials_sentiment",
     "industrials_confidence"
   ],
-  "sequence_length": 5,
-  "input_size": 25,
+  "sequence_length": 4,
+  "input_size": 31,
   "architecture": {
+    "model_type": "LSTMRegressor (Tuned)",
     "lstm1_hidden": 128,
     "lstm2_hidden": 64,
     "fc_layers": [
-      128,
       64,
       32,
       1
     ],
-    "dropout": 0.3,
-    "total_parameters": 147713
+    "dropout": 0.2,
+    "total_parameters": 138369
   },
   "training": {
-    "train_size": 11769,
-    "val_size": 2514,
-    "test_size": 2521,
+    "train_size": 18980,
+    "val_size": 4055,
+    "test_size": 4065,
     "optimizer": "Adam",
-    "learning_rate": 0.001,
+    "learning_rate": 0.0005,
+    "batch_size": 64,
     "loss_function": "MSE"
   },
   "performance": {
-    "test_mse": 0.001291898312047124,
-    "test_rmse": 0.035942986966126286,
-    "test_mae": 0.025966079905629158,
-    "test_r2": 0.33389532566070557,
-    "within_1pct": 25.62475208250694,
-    "within_2pct": 48.671162237207454,
-    "within_5pct": 89.28996429988099
+    "test_mse": 0.001295963884331286,
+    "test_rmse": 0.035999498389995464,
+    "test_mae": 0.023752842098474503,
+    "test_r2": 0.2965835928916931,
+    "within_1pct": 30.03690036900369,
+    "within_2pct": 56.99876998769988,
+    "within_5pct": 90.52890528905289
   },
   "data_info": {
-    "date_range": "2018-01-01 to 2023-12-25",
-    "total_samples": 16809,
-    "stocks": 57,
+    "date_range": "2013-01-01 to 2022-12-27",
+    "total_samples": 27104,
+    "stocks": 63,
     "sectors": 5
   }
 }
